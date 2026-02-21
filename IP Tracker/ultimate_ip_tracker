@@ -1,0 +1,230 @@
+import requests
+import webbrowser
+import threading
+from queue import Queue
+import json
+
+class UltimateIPTracker:
+    """
+    ULTIMATE UNLIMITED IP TRACKER
+    Uses multiple methods with fallback
+    """
+    
+    def __init__(self):
+        # Public DNS resolvers for additional info
+        self.dns_servers = [
+            '8.8.8.8',      # Google DNS
+            '1.1.1.1',      # Cloudflare DNS
+            '9.9.9.9',      # Quad9 DNS
+            '208.67.222.222' # OpenDNS
+        ]
+        
+    def get_location_all_methods(self, ip_address):
+        """Try EVERY possible method to get location"""
+        methods = [
+            self.method_api_fallback,
+            self.method_dns_lookup,
+            self.method_whois,
+            self.method_reverse_dns
+        ]
+        
+        results = []
+        threads = []
+        result_queue = Queue()
+        
+        # Run all methods in parallel
+        for method in methods:
+            thread = threading.Thread(
+                target=self.run_method,
+                args=(method, ip_address, result_queue)
+            )
+            threads.append(thread)
+            thread.start()
+        
+        # Wait for all threads
+        for thread in threads:
+            thread.join()
+        
+        # Collect results
+        while not result_queue.empty():
+            result = result_queue.get()
+            if result:
+                results.append(result)
+        
+        # Return the best result
+        if results:
+            return self.choose_best_result(results)
+        
+        return None
+    
+    def run_method(self, method, ip, queue):
+        """Run a method and put result in queue"""
+        try:
+            result = method(ip)
+            queue.put(result)
+        except:
+            queue.put(None)
+    
+    def method_api_fallback(self, ip):
+        """Method 1: Multiple free APIs"""
+        apis = [
+            f"http://ip-api.com/json/{ip}",
+            f"https://freeipapi.com/api/json/{ip}",
+            f"https://ipwho.is/{ip}",
+            f"https://api.ip.sb/geoip/{ip}",
+            f"https://ipapi.co/{ip}/json/"
+        ]
+        
+        for api_url in apis:
+            try:
+                response = requests.get(api_url, timeout=3)
+                if response.status_code == 200:
+                    data = response.json()
+                    
+                    # Try to extract coordinates
+                    coords = self.extract_coords(data)
+                    if coords:
+                        return {
+                            'method': 'API',
+                            'data': coords,
+                            'confidence': 90
+                        }
+            except:
+                continue
+        
+        return None
+    
+    def method_dns_lookup(self, ip):
+        """Method 2: DNS-based geolocation"""
+        try:
+            # Query public DNS for location hints
+            import dns.resolver
+            resolver = dns.resolver.Resolver()
+            resolver.nameservers = ['8.8.8.8']
+            
+            # Try to get hostname
+            try:
+                hostname = socket.gethostbyaddr(ip)[0]
+                if '.google.' in hostname:
+                    return {
+                        'method': 'DNS',
+                        'data': {'city': 'Mountain View', 'country': 'USA'},
+                        'confidence': 70
+                    }
+            except:
+                pass
+        except:
+            pass
+        
+        return None
+    
+    def method_whois(self, ip):
+        """Method 3: WHOIS data scraping"""
+        try:
+            # Use whois command if available
+            import subprocess
+            result = subprocess.run(
+                ['whois', ip],
+                capture_output=True,
+                text=True,
+                timeout=5
+            )
+            
+            # Parse WHOIS output
+            if 'Country:' in result.stdout:
+                lines = result.stdout.split('\n')
+                for line in lines:
+                    if 'Country:' in line:
+                        country = line.split(':')[1].strip()
+                        return {
+                            'method': 'WHOIS',
+                            'data': {'country': country},
+                            'confidence': 85
+                        }
+        except:
+            pass
+        
+        return None
+    
+    def extract_coords(self, data):
+        """Extract coordinates from any response format"""
+        # Try various key patterns
+        patterns = [
+            ('lat', 'lon'),
+            ('latitude', 'longitude'),
+            ('Latitude', 'Longitude'),
+            ('lat', 'lng'),
+            ('location.lat', 'location.lng')
+        ]
+        
+        for lat_key, lon_key in patterns:
+            lat = data.get(lat_key)
+            lon = data.get(lon_key)
+            
+            if lat and lon:
+                return {
+                    'latitude': lat,
+                    'longitude': lon,
+                    'city': data.get('city', ''),
+                    'country': data.get('country', '')
+                }
+        
+        return None
+    
+    def choose_best_result(self, results):
+        """Choose the most confident result"""
+        results = [r for r in results if r]
+        if not results:
+            return None
+        
+        # Sort by confidence
+        results.sort(key=lambda x: x['confidence'], reverse=True)
+        return results[0]['data']
+    
+    def open_pinpoint_map(self, lat, lon):
+        """Open Google Maps with pinpoint accuracy"""
+        # Multiple map options
+        maps = [
+            f"https://www.google.com/maps/@{lat},{lon},15z",  # Google Maps
+            f"https://www.openstreetmap.org/#map=15/{lat}/{lon}",  # OpenStreetMap
+            f"https://www.bing.com/maps?cp={lat}~{lon}&lvl=15",  # Bing Maps
+        ]
+        
+        for map_url in maps:
+            webbrowser.open(map_url)
+        
+        return maps[0]
+
+# FINAL USAGE
+if __name__ == "__main__":
+    print("🌐 ULTIMATE UNLIMITED IP TRACKER")
+    print("="*50)
+    
+    tracker = UltimateIPTracker()
+    
+    while True:
+        ip = input("\nEnter IP address (or 'quit'): ").strip()
+        
+        if ip.lower() in ['quit', 'exit', 'q']:
+            break
+        
+        print(f"\n🔍 Tracking {ip}...")
+        print("Using multiple unlimited methods...")
+        
+        result = tracker.get_location_all_methods(ip)
+        
+        if result:
+            print(f"\n✅ LOCATION FOUND:")
+            print(f"   City: {result.get('city', 'Unknown')}")
+            print(f"   Country: {result.get('country', 'Unknown')}")
+            print(f"   Coordinates: {result.get('latitude')}, {result.get('longitude')}")
+            
+            open_map = input("\nOpen in Google Maps? (y/n): ").lower()
+            if open_map == 'y':
+                url = tracker.open_pinpoint_map(
+                    result['latitude'],
+                    result['longitude']
+                )
+                print(f"📌 Map opened: {url}")
+        else:
+            print("❌ Could not determine location")
