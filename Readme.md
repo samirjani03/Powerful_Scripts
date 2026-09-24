@@ -24,6 +24,13 @@ A collection of small scripts and security tools for **productivity,** **automa
 
 A Windows file organizer for messy folders.
 
+> **Windows may show a security warning because this `.bat` file is not digitally signed.**
+> This does not automatically mean the file is malicious.
+>
+> You can inspect the file yourself by uploading it to [VirusTotal](https://www.virustotal.com/gui/home/upload) before running it.
+>
+> **Always review the scan results and source code before allowing it to run.**
+
 ### Features
 
 * Organizes files by type
