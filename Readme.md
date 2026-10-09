@@ -14,7 +14,7 @@ A collection of small scripts and security tools for **productivity,** **automa
 | [SQLinjection.py](./SQLinjection.py)                                          | SQL injection testing/scanning tool         | Python              |
 | [locker.bat](./locker.bat)                                                    | Simple folder hide/unhide demo              | Windows Batch       |
 | [pdfprotector.py](./pdfprotector.py)                                          | Password-protects PDF, Word and Excel files | Python              |
-| [Downloads Organizer](./Downloads-Organizer/Downloads_Organizer_ULTIMATE.bat) | Smart recursive file organizer with undo    | Batch + PowerShell  |
+| [Downloads Organizer](Downloads-Organizer/Downloads_Organizer_ULTIMATE.bat) | Smart recursive file organizer with undo    | Batch + PowerShell  |
 
 ---
 
